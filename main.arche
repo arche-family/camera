@@ -1,0 +1,111 @@
+/// Camera, the Arche phone's, written in Arche, as Android's camera app
+/// is: what the camera sees, live, filling the width; a round shutter
+/// button under it that takes a photo, kept in the shared Pictures folder
+/// named by when it was taken; the last photo's name once it is kept; and
+/// Photos, which opens the gallery. A phone without a camera says so. An
+/// app of the page: its taps come as click events.
+///
+/// An app of the phone's world (arche:phone, wit/): the camera's view is
+/// an image the phone keeps up to date (camera's view), drawn in an img;
+/// the app asks for a frame every 100 ms while it is drawn, so that what
+/// it shows moves as the camera's picture does.
+import alloc;
+import camera;
+import dom;
+import host_api;
+import std;
+
+const SHEET: str = "body { padding: 0; background: #000000; } .app { display: flex; flex-direction: column; gap: 16px; padding: 0 0 16px 0; } img.view { width: 100%; } .none { font-size: 18px; color: #CAC4D0; padding: 48px 16px; text-align: center; } .bar { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 24px; padding: 8px 16px; } button.shot { width: 72px; height: 72px; border-radius: 50%; border: 4px solid #FFFFFF; background: #E6E1E5; padding: 0; font-size: 1px; color: #E6E1E5; } button.photos { padding: 12px 20px; border-radius: 24px; border: 0; font-size: 16px; background: #2B2930; color: #E6E1E5; } .saved { font-size: 15px; color: #CAC4D0; text-align: center; } .hidden { display: none; }";
+
+/// How often the view is drawn again, in ms.
+const EVERY_MS: u32 = 100;
+
+type Camera = struct {
+    /// The view's image, as the phone numbers it; NONE before there is one.
+    handle: u32,
+    /// The page's nodes.
+    view: u32,
+    empty: u32,
+    saved: u32,
+}
+
+const NONE: u32 = 0xFFFFFFFF;
+
+fn init(host: &mut std.Host, a: alloc.Allocator) -> Camera {
+    _ = dom.add_stylesheet(host, css: SHEET);
+    let root = dom.root(host);
+    let markup = "<div class='app'><img class='view' alt='What the camera sees'><div class='none hidden'>No camera</div><div class='bar'><button class='shot' data-k='take'>Take photo</button><button class='photos' data-k='photos'>Photos</button></div><div class='saved'></div></div>";
+    var why = alloc.String.init(a);
+    if not dom.set_markup(host, item: root, markup: markup, why: &mut why, a: a) {
+        host_api.log(host, msg: why.view());
+    }
+    let app = first(host, selector: ".app", a: a);
+    dom.listen(host, item: app, kind: "click");
+    return Camera { handle: NONE, view: first(host, selector: ".view", a: a), empty: first(host, selector: ".none", a: a), saved: first(host, selector: ".saved", a: a) };
+}
+
+fn update(state: &mut Camera, host: &mut std.Host, a: alloc.Allocator) {
+    for e in dom.events(host, a: a).items() {
+        if e.kind.view().eq("click") {
+            match key_of(host, n: e.target, a: a) {
+                some(k) => {
+                    if k.view().eq("take") {
+                        camera.take(host);
+                    } else if k.view().eq("photos") {
+                        host_api.open_app(host, source: "photos.component.wasm");
+                    }
+                }
+                none => { }
+            }
+        }
+    }
+    // What the camera sees, its image given to the img once.
+    match camera.view(host) {
+        some(h) => {
+            if h != state.handle {
+                state.handle = h;
+                var src = alloc.String.init(a);
+                src.push_u64(h as u64);
+                dom.set_attribute(host, item: state.view, name: "src", value_: src.view());
+            }
+            dom.toggle_class(host, item: state.view, name: "hidden", on: false);
+            dom.toggle_class(host, item: state.empty, name: "hidden", on: true);
+            host_api.request_frame(host, after_ms: EVERY_MS);
+        }
+        none => {
+            dom.toggle_class(host, item: state.view, name: "hidden", on: true);
+            dom.toggle_class(host, item: state.empty, name: "hidden", on: false);
+        }
+    }
+    match camera.last(host, a: a) {
+        some(name) => {
+            var s = alloc.String.from("Saved ", a);
+            s.push_str(name.view());
+            dom.set_text(host, item: state.saved, text: s.view());
+        }
+        none => { }
+    }
+}
+
+/// The first node under the page that selector finds; 0 for none.
+fn first(host: &mut std.Host, selector: str, a: alloc.Allocator) -> u32 {
+    let found = dom.query_all(host, scope: dom.root(host), selector: selector, a: a);
+    if found.len() == 0 {
+        return 0;
+    }
+    return found.items()[0];
+}
+
+/// The key a click on n is: its data-k, or its nearest ancestor's.
+fn key_of(host: &mut std.Host, n: u32, a: alloc.Allocator) -> ?alloc.String {
+    var at = n;
+    var hops: u32 = 0;
+    while at != 0 and hops < 8 : (hops += 1) {
+        match dom.get_attribute(host, item: at, name: "data-k", a: a) {
+            some(k) => { return k; }
+            none => { }
+        }
+        at = dom.parent(host, item: at) orelse 0;
+    }
+    return none;
+}

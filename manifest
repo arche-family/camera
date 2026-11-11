@@ -1,0 +1,6 @@
+name: camera
+version: 1
+title: Camera
+about: Photos of what the camera sees, in Arche
+publisher: arche
+needs: camera
