@@ -1,9 +1,10 @@
 /// Camera, the Arche phone's, written in Arche, as Android's camera app
-/// is: what the camera sees, live, filling the width; a round shutter
-/// button under it that takes a photo, kept in the shared Pictures folder
-/// named by when it was taken; the last photo's name once it is kept; and
-/// Photos, which opens the gallery. A phone without a camera says so. An
-/// app of the page: its taps come as click events.
+/// is: what the camera sees, live, filling the width; under it Photos,
+/// which opens the gallery, a round shutter button that takes a photo,
+/// kept in the shared Pictures folder named by when it was taken, and, on
+/// a phone with a camera on its front, a button that turns to it and
+/// back; the last photo's name once it is kept. A phone without a camera
+/// says so. An app of the page: its taps come as click events.
 ///
 /// An app of the phone's world (arche:phone, wit/): the camera's view is
 /// an image the phone keeps up to date (camera's view), drawn in an img;
@@ -15,7 +16,7 @@ import dom;
 import host_api;
 import std;
 
-const SHEET: str = "body { padding: 0; background: #000000; } .app { display: flex; flex-direction: column; gap: 16px; padding: 0 0 16px 0; } img.view { width: 100%; } .none { font-size: 18px; color: #CAC4D0; padding: 48px 16px; text-align: center; } .bar { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 24px; padding: 8px 16px; } button.shot { width: 72px; height: 72px; border-radius: 50%; border: 4px solid #FFFFFF; background: #E6E1E5; padding: 0; font-size: 1px; color: #E6E1E5; } button.photos { padding: 12px 20px; border-radius: 24px; border: 0; font-size: 16px; background: #2B2930; color: #E6E1E5; } .saved { font-size: 15px; color: #CAC4D0; text-align: center; } .hidden { display: none; }";
+const SHEET: str = "body { padding: 0; background: #000000; } .app { display: flex; flex-direction: column; gap: 16px; padding: 0 0 16px 0; } img.view { width: 100%; } .none { font-size: 18px; color: #CAC4D0; padding: 48px 16px; text-align: center; } .bar { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 24px; padding: 8px 16px; } button.shot { width: 72px; height: 72px; border-radius: 50%; border: 4px solid #FFFFFF; background: #E6E1E5; padding: 0; font-size: 1px; color: #E6E1E5; } button.photos { padding: 12px 20px; border-radius: 24px; border: 0; font-size: 16px; background: #2B2930; color: #E6E1E5; } button.flip { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; border: 0; padding: 0; font-size: 22px; background: #2B2930; color: #E6E1E5; } .saved { font-size: 15px; color: #CAC4D0; text-align: center; } .hidden { display: none; }";
 
 /// How often the view is drawn again, in ms.
 const EVERY_MS: u32 = 100;
@@ -23,6 +24,8 @@ const EVERY_MS: u32 = 100;
 type Camera = struct {
     /// The view's image, as the phone numbers it; NONE before there is one.
     handle: u32,
+    /// Whether the view is the front camera's.
+    front: bool,
     /// The page's nodes.
     view: u32,
     empty: u32,
@@ -34,14 +37,18 @@ const NONE: u32 = 0xFFFFFFFF;
 fn init(host: &mut std.Host, a: alloc.Allocator) -> Camera {
     _ = dom.add_stylesheet(host, css: SHEET);
     let root = dom.root(host);
-    let markup = "<div class='app'><img class='view' alt='What the camera sees'><div class='none hidden'>No camera</div><div class='bar'><button class='shot' data-k='take'>Take photo</button><button class='photos' data-k='photos'>Photos</button></div><div class='saved'></div></div>";
+    let markup = "<div class='app'><img class='view' alt='What the camera sees'><div class='none hidden'>No camera</div><div class='bar'><button class='photos' data-k='photos'>Photos</button><button class='shot' data-k='take'>Take photo</button><button class='flip hidden' data-k='flip'>⇄</button></div><div class='saved'></div></div>";
     var why = alloc.String.init(a);
     if not dom.set_markup(host, item: root, markup: markup, why: &mut why, a: a) {
         host_api.log(host, msg: why.view());
     }
     let app = first(host, selector: ".app", a: a);
     dom.listen(host, item: app, kind: "click");
-    return Camera { handle: NONE, view: first(host, selector: ".view", a: a), empty: first(host, selector: ".none", a: a), saved: first(host, selector: ".saved", a: a) };
+    // The front camera's button, on a phone that has one.
+    if camera.has_front(host) {
+        dom.toggle_class(host, item: first(host, selector: ".flip", a: a), name: "hidden", on: false);
+    }
+    return Camera { handle: NONE, front: false, view: first(host, selector: ".view", a: a), empty: first(host, selector: ".none", a: a), saved: first(host, selector: ".saved", a: a) };
 }
 
 fn update(state: &mut Camera, host: &mut std.Host, a: alloc.Allocator) {
@@ -53,6 +60,9 @@ fn update(state: &mut Camera, host: &mut std.Host, a: alloc.Allocator) {
                         camera.take(host);
                     } else if k.view().eq("photos") {
                         host_api.open_app(host, source: "photos.component.wasm");
+                    } else if k.view().eq("flip") {
+                        state.front = not state.front;
+                        camera.use_front(host, front: state.front);
                     }
                 }
                 none => { }

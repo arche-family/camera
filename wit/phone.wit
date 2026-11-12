@@ -6,7 +6,8 @@ package arche:phone@0.1.0;
 
 /// Notifications: what an app tells its user while it is not looked at.
 /// They are in the shade, and one that comes is shown over the top of the
-/// screen for a while; a tap on one opens its app.
+/// screen for a while; a tap on one opens its app. Only for an app whose
+/// manifest needs notify (T8); another's post posts nothing.
 interface notify {
     /// A notification of title and text; its number, to cancel it by.
     post: func(title: string, text: string) -> u32;
@@ -16,7 +17,9 @@ interface notify {
 
 /// An app woken off the screen, as an alarm or a messenger is: the phone
 /// runs its update once then, for at most 2 s, and what it draws is not
-/// shown; it may post a notification, and ask to be woken again.
+/// shown; it may post a notification, and ask to be woken again. Only for
+/// an app whose manifest needs background (T8); another's wake-at wakes
+/// nothing.
 interface background {
     /// Wake this app at about at-millis (as now-millis counts): one time an
     /// app, a later call replacing it; 0 asks for none. The phone keeps it
@@ -106,6 +109,16 @@ interface alarm {
     snoozed: func() -> option<s64>;
     /// The app's alarm, ringing or snoozed, over.
     dismiss: func();
+    /// The app's alarm set to ring at at-millis (as now-millis counts),
+    /// label under the time; 0 takes it away. One an app, a later call
+    /// replacing it. The phone keeps it where it reads before the user's
+    /// data opens, as Android's alarm clocks are (Direct Boot), and rings
+    /// it at its time itself, whether the app runs or not, the phone
+    /// asleep or locked since a restart. Whether it is set.
+    set: func(at-millis: s64, label: string) -> bool;
+    /// When the app's set alarm rings, as now-millis counts; none when it
+    /// has none set, or it has rung.
+    next: func() -> option<s64>;
 }
 
 /// The phone's shared files (T7): photos, music, documents and downloads,
@@ -151,6 +164,29 @@ interface camera {
     /// The last photo's name in the shared Pictures folder; none before
     /// the first.
     last: func() -> option<string>;
+    /// Whether the phone has a camera on its front as well as the one on
+    /// its back (T9).
+    has-front: func() -> bool;
+    /// The camera the view and photos come from: the one on the front, or
+    /// the one on the back, as at first. Nothing changes when the phone
+    /// has no such camera.
+    use-front: func(front: bool);
+}
+
+/// Sound an app plays (T7): a WAV file of the phone's shared files through
+/// its speaker, one at a time for the whole phone, as Android's media
+/// playback is: a notification's chime pauses it a moment, and a call or
+/// an alarm stops it. Only for an app whose manifest needs files, which
+/// may read them; another's play plays nothing.
+interface audio {
+    /// The WAV file at path in the shared files played from its start, in
+    /// the place of what played; whether it was asked to. What plays says
+    /// whether it does.
+    play: func(path: string) -> bool;
+    /// What plays stopped.
+    stop: func();
+    /// The path of what plays, whichever app played it; none for nothing.
+    playing: func() -> option<string>;
 }
 
 world phone-app {
@@ -164,4 +200,5 @@ world phone-app {
     import alarm;
     import files;
     import camera;
+    import audio;
 }

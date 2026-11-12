@@ -1,1 +1,1 @@
---frames 3 --click 1:7,2:9 --add arche:phone/camera@0.1.0#view=none --add arche:phone/camera@0.1.0#take --add arche:phone/camera@0.1.0#last=none
+--frames 4 --click 1:9,2:11,3:7 --add arche:phone/camera@0.1.0#view=none --add arche:phone/camera@0.1.0#take --add arche:phone/camera@0.1.0#last=none --add arche:phone/camera@0.1.0#has-front=true --add arche:phone/camera@0.1.0#use-front
