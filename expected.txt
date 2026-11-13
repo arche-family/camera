@@ -1,7 +1,7 @@
-=== headless run: 4 frames ===
+=== headless run: 5 frames ===
 
 --- frame 0  (clicks fed to guest: []) ---
-   [page] 13 nodes
+   [page] 15 nodes
    #1 body
      #2 div.app {click}
        #3 img.view.hidden [alt="What the camera sees"]
@@ -14,14 +14,16 @@
            #10 "Take photo"
          #11 button.flip [data-k="flip"]
            #12 "⇄"
-       #13 div.saved
+         #13 button.video [data-k="video"]
+           #14 "Video"
+       #15 div.saved
    [call] arche:phone/camera@0.1.0#has-front()
    [call] arche:phone/camera@0.1.0#view()
    [call] arche:phone/camera@0.1.0#last()
 
 --- frame 1  (clicks fed to guest: []) ---
    [tap] #9
-   [page] 13 nodes
+   [page] 15 nodes
    #1 body
      #2 div.app {click}
        #3 img.view.hidden [alt="What the camera sees"]
@@ -34,14 +36,16 @@
            #10 "Take photo"
          #11 button.flip [data-k="flip"]
            #12 "⇄"
-       #13 div.saved
+         #13 button.video [data-k="video"]
+           #14 "Video"
+       #15 div.saved
    [call] arche:phone/camera@0.1.0#take()
    [call] arche:phone/camera@0.1.0#view()
    [call] arche:phone/camera@0.1.0#last()
 
 --- frame 2  (clicks fed to guest: []) ---
    [tap] #11
-   [page] 13 nodes
+   [page] 15 nodes
    #1 body
      #2 div.app {click}
        #3 img.view.hidden [alt="What the camera sees"]
@@ -54,14 +58,16 @@
            #10 "Take photo"
          #11 button.flip [data-k="flip"]
            #12 "⇄"
-       #13 div.saved
+         #13 button.video [data-k="video"]
+           #14 "Video"
+       #15 div.saved
    [call] arche:phone/camera@0.1.0#use-front(true)
    [call] arche:phone/camera@0.1.0#view()
    [call] arche:phone/camera@0.1.0#last()
 
 --- frame 3  (clicks fed to guest: []) ---
-   [tap] #7
-   [page] 13 nodes
+   [tap] #13
+   [page] 15 nodes
    #1 body
      #2 div.app {click}
        #3 img.view.hidden [alt="What the camera sees"]
@@ -74,7 +80,32 @@
            #10 "Take photo"
          #11 button.flip [data-k="flip"]
            #12 "⇄"
-       #13 div.saved
+         #13 button.video [data-k="video"]
+           #14 "Video"
+       #15 div.saved
+   [call] arche:phone/camera@0.1.0#recording()
+   [call] arche:phone/camera@0.1.0#start-video()
+   [call] arche:phone/camera@0.1.0#view()
+   [call] arche:phone/camera@0.1.0#last()
+
+--- frame 4  (clicks fed to guest: []) ---
+   [tap] #7
+   [page] 15 nodes
+   #1 body
+     #2 div.app {click}
+       #3 img.view.hidden [alt="What the camera sees"]
+       #4 div.none
+         #5 "No camera"
+       #6 div.bar
+         #7 button.photos [data-k="photos"]
+           #8 "Photos"
+         #9 button.shot [data-k="take"]
+           #10 "Take photo"
+         #11 button.flip [data-k="flip"]
+           #12 "⇄"
+         #13 button.video [data-k="video"]
+           #14 "Video"
+       #15 div.saved
    [call] arche:phone/camera@0.1.0#view()
    [call] arche:phone/camera@0.1.0#last()
    [asks] APP wants to open photos.component.wasm
