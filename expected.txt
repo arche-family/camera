@@ -1,111 +1,209 @@
-=== headless run: 5 frames ===
+=== headless run: 7 frames ===
 
 --- frame 0  (clicks fed to guest: []) ---
-   [page] 15 nodes
+   [page] 23 nodes
    #1 body
      #2 div.app {click}
-       #3 img.view.hidden [alt="What the camera sees"]
-       #4 div.none
-         #5 "No camera"
-       #6 div.bar
-         #7 button.photos [data-k="photos"]
-           #8 "Photos"
-         #9 button.shot [data-k="take"]
-           #10 "Take photo"
-         #11 button.flip [data-k="flip"]
-           #12 "⇄"
-         #13 button.video [data-k="video"]
-           #14 "Video"
-       #15 div.saved
+       #3 div.top
+       #4 div.stage
+         #5 img.view.hidden [alt="What the camera sees"]
+         #6 div.none
+           #7 "No camera"
+         #8 div.saved
+       #9 div.modes
+         #10 button.mode [data-k="video"]
+           #11 "Video"
+         #12 button.mode.on [data-k="photo"]
+           #13 "Photo"
+       #14 div.bar
+         #15 button.side [data-k="photos"]
+           #16 span.icon.fill
+             #17 "photo_library"
+         #18 button.shot [data-k="take"]
+           #19 div.core
+             #20 "Take photo"
+         #21 button.side.ghost.flip [data-k="flip"]
+           #22 span.icon
+             #23 "cameraswitch"
    [call] arche:phone/camera@0.1.0#has-front()
    [call] arche:phone/camera@0.1.0#view()
    [call] arche:phone/camera@0.1.0#last()
 
 --- frame 1  (clicks fed to guest: []) ---
-   [tap] #9
-   [page] 15 nodes
+   [tap] #18
+   [page] 23 nodes
    #1 body
      #2 div.app {click}
-       #3 img.view.hidden [alt="What the camera sees"]
-       #4 div.none
-         #5 "No camera"
-       #6 div.bar
-         #7 button.photos [data-k="photos"]
-           #8 "Photos"
-         #9 button.shot [data-k="take"]
-           #10 "Take photo"
-         #11 button.flip [data-k="flip"]
-           #12 "⇄"
-         #13 button.video [data-k="video"]
-           #14 "Video"
-       #15 div.saved
+       #3 div.top
+       #4 div.stage
+         #5 img.view.hidden [alt="What the camera sees"]
+         #6 div.none
+           #7 "No camera"
+         #8 div.saved
+       #9 div.modes
+         #10 button.mode [data-k="video"]
+           #11 "Video"
+         #12 button.mode.on [data-k="photo"]
+           #13 "Photo"
+       #14 div.bar
+         #15 button.side [data-k="photos"]
+           #16 span.icon.fill
+             #17 "photo_library"
+         #18 button.shot [data-k="take"]
+           #19 div.core
+             #20 "Take photo"
+         #21 button.side.ghost.flip [data-k="flip"]
+           #22 span.icon
+             #23 "cameraswitch"
    [call] arche:phone/camera@0.1.0#take()
    [call] arche:phone/camera@0.1.0#view()
    [call] arche:phone/camera@0.1.0#last()
 
 --- frame 2  (clicks fed to guest: []) ---
-   [tap] #11
-   [page] 15 nodes
+   [tap] #21
+   [page] 23 nodes
    #1 body
      #2 div.app {click}
-       #3 img.view.hidden [alt="What the camera sees"]
-       #4 div.none
-         #5 "No camera"
-       #6 div.bar
-         #7 button.photos [data-k="photos"]
-           #8 "Photos"
-         #9 button.shot [data-k="take"]
-           #10 "Take photo"
-         #11 button.flip [data-k="flip"]
-           #12 "⇄"
-         #13 button.video [data-k="video"]
-           #14 "Video"
-       #15 div.saved
+       #3 div.top
+       #4 div.stage
+         #5 img.view.hidden [alt="What the camera sees"]
+         #6 div.none
+           #7 "No camera"
+         #8 div.saved
+       #9 div.modes
+         #10 button.mode [data-k="video"]
+           #11 "Video"
+         #12 button.mode.on [data-k="photo"]
+           #13 "Photo"
+       #14 div.bar
+         #15 button.side [data-k="photos"]
+           #16 span.icon.fill
+             #17 "photo_library"
+         #18 button.shot [data-k="take"]
+           #19 div.core
+             #20 "Take photo"
+         #21 button.side.ghost.flip [data-k="flip"]
+           #22 span.icon
+             #23 "cameraswitch"
    [call] arche:phone/camera@0.1.0#use-front(true)
    [call] arche:phone/camera@0.1.0#view()
    [call] arche:phone/camera@0.1.0#last()
 
 --- frame 3  (clicks fed to guest: []) ---
-   [tap] #13
-   [page] 15 nodes
+   [tap] #10
+   [page] 23 nodes
    #1 body
      #2 div.app {click}
-       #3 img.view.hidden [alt="What the camera sees"]
-       #4 div.none
-         #5 "No camera"
-       #6 div.bar
-         #7 button.photos [data-k="photos"]
-           #8 "Photos"
-         #9 button.shot [data-k="take"]
-           #10 "Take photo"
-         #11 button.flip [data-k="flip"]
-           #12 "⇄"
-         #13 button.video [data-k="video"]
-           #14 "Video"
-       #15 div.saved
+       #3 div.top
+       #4 div.stage
+         #5 img.view.hidden [alt="What the camera sees"]
+         #6 div.none
+           #7 "No camera"
+         #8 div.saved
+       #9 div.modes
+         #10 button.mode.on [data-k="video"]
+           #11 "Video"
+         #12 button.mode [data-k="photo"]
+           #13 "Photo"
+       #14 div.bar
+         #15 button.side [data-k="photos"]
+           #16 span.icon.fill
+             #17 "photo_library"
+         #18 button.shot.video [data-k="take"]
+           #19 div.core
+             #24 "Record"
+         #21 button.side.ghost.flip [data-k="flip"]
+           #22 span.icon
+             #23 "cameraswitch"
+   [call] arche:phone/camera@0.1.0#view()
+   [call] arche:phone/camera@0.1.0#last()
+
+--- frame 4  (clicks fed to guest: []) ---
+   [tap] #18
+   [page] 23 nodes
+   #1 body
+     #2 div.app {click}
+       #3 div.top
+       #4 div.stage
+         #5 img.view.hidden [alt="What the camera sees"]
+         #6 div.none
+           #7 "No camera"
+         #8 div.saved
+       #9 div.modes
+         #10 button.mode.on [data-k="video"]
+           #11 "Video"
+         #12 button.mode [data-k="photo"]
+           #13 "Photo"
+       #14 div.bar
+         #15 button.side [data-k="photos"]
+           #16 span.icon.fill
+             #17 "photo_library"
+         #18 button.shot.video [data-k="take"]
+           #19 div.core
+             #24 "Record"
+         #21 button.side.ghost.flip [data-k="flip"]
+           #22 span.icon
+             #23 "cameraswitch"
    [call] arche:phone/camera@0.1.0#recording()
    [call] arche:phone/camera@0.1.0#start-video()
    [call] arche:phone/camera@0.1.0#view()
    [call] arche:phone/camera@0.1.0#last()
 
---- frame 4  (clicks fed to guest: []) ---
-   [tap] #7
-   [page] 15 nodes
+--- frame 5  (clicks fed to guest: []) ---
+   [tap] #12
+   [page] 23 nodes
    #1 body
      #2 div.app {click}
-       #3 img.view.hidden [alt="What the camera sees"]
-       #4 div.none
-         #5 "No camera"
-       #6 div.bar
-         #7 button.photos [data-k="photos"]
-           #8 "Photos"
-         #9 button.shot [data-k="take"]
-           #10 "Take photo"
-         #11 button.flip [data-k="flip"]
-           #12 "⇄"
-         #13 button.video [data-k="video"]
-           #14 "Video"
-       #15 div.saved
+       #3 div.top
+       #4 div.stage
+         #5 img.view.hidden [alt="What the camera sees"]
+         #6 div.none
+           #7 "No camera"
+         #8 div.saved
+       #9 div.modes
+         #10 button.mode [data-k="video"]
+           #11 "Video"
+         #12 button.mode.on [data-k="photo"]
+           #13 "Photo"
+       #14 div.bar
+         #15 button.side [data-k="photos"]
+           #16 span.icon.fill
+             #17 "photo_library"
+         #18 button.shot [data-k="take"]
+           #19 div.core
+             #25 "Take photo"
+         #21 button.side.ghost.flip [data-k="flip"]
+           #22 span.icon
+             #23 "cameraswitch"
+   [call] arche:phone/camera@0.1.0#view()
+   [call] arche:phone/camera@0.1.0#last()
+
+--- frame 6  (clicks fed to guest: []) ---
+   [tap] #15
+   [page] 23 nodes
+   #1 body
+     #2 div.app {click}
+       #3 div.top
+       #4 div.stage
+         #5 img.view.hidden [alt="What the camera sees"]
+         #6 div.none
+           #7 "No camera"
+         #8 div.saved
+       #9 div.modes
+         #10 button.mode [data-k="video"]
+           #11 "Video"
+         #12 button.mode.on [data-k="photo"]
+           #13 "Photo"
+       #14 div.bar
+         #15 button.side [data-k="photos"]
+           #16 span.icon.fill
+             #17 "photo_library"
+         #18 button.shot [data-k="take"]
+           #19 div.core
+             #25 "Take photo"
+         #21 button.side.ghost.flip [data-k="flip"]
+           #22 span.icon
+             #23 "cameraswitch"
    [call] arche:phone/camera@0.1.0#view()
    [call] arche:phone/camera@0.1.0#last()
    [asks] APP wants to open photos.component.wasm

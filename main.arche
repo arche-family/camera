@@ -1,11 +1,14 @@
-/// Camera, the Arche phone's, written in Arche, as Android's camera app
-/// is: what the camera sees, live, filling the width; under it Photos,
-/// which opens the gallery, a round shutter button that takes a photo,
-/// kept in the shared Pictures folder named by when it was taken, and, on
-/// a phone with a camera on its front, a button that turns to it and
-/// back; Video, which records a video into the shared Movies folder until
-/// Stop; the last photo's or video's name once it is kept. A phone without a camera
-/// says so. An app of the page: its taps come as click events.
+/// Camera, the Arche phone's, written in Arche (docs/sprints.md T7, T10 in
+/// arche-os), as a phone's camera app is: black, what the camera sees,
+/// live, filling the width, the last photo's or video's name once it is
+/// kept; under it its modes, Video and Photo, the one chosen yellow; and
+/// along the bottom the gallery's button, the round shutter and, on a
+/// phone with a camera on its front, the button that turns to it and
+/// back. In Photo's mode the shutter, white, takes a photo, kept in the
+/// shared Pictures folder named by when it was taken; in Video's, red, it
+/// records a video into the shared Movies folder, REC at the top, until
+/// it is tapped again, a square then. A phone without a camera says so.
+/// An app of the page: its taps come as click events.
 ///
 /// An app of the phone's world (arche:phone, wit/): the camera's view is
 /// an image the phone keeps up to date (camera's view), drawn in an img;
@@ -17,7 +20,7 @@ import dom;
 import host_api;
 import std;
 
-const SHEET: str = "body { padding: 0; background: #000000; } .app { display: flex; flex-direction: column; gap: 16px; padding: 0 0 16px 0; } img.view { width: 100%; } .none { font-size: 18px; color: #CAC4D0; padding: 48px 16px; text-align: center; } .bar { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 24px; padding: 8px 16px; } button.shot { width: 72px; height: 72px; border-radius: 50%; border: 4px solid #FFFFFF; background: #E6E1E5; padding: 0; font-size: 1px; color: #E6E1E5; } button.photos { padding: 12px 20px; border-radius: 24px; border: 0; font-size: 16px; background: #2B2930; color: #E6E1E5; } button.video { padding: 12px 20px; border-radius: 24px; border: 0; font-size: 16px; background: #B3261E; color: #FFFFFF; } button.flip { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; border: 0; padding: 0; font-size: 22px; background: #2B2930; color: #E6E1E5; } .saved { font-size: 15px; color: #CAC4D0; text-align: center; } .hidden { display: none; }";
+const SHEET: str = "body { padding: 0; margin: 0; background: #000000; color: #ffffff; } .icon { font-family: icons; font-size: 26px; line-height: 1; } .icon.fill { font-variation-settings: 'FILL' 1; } .app { display: flex; flex-direction: column; min-height: 100vh; background: #000000; } .top { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; height: 52px; font-size: 15px; font-weight: 500; } .rec { color: #ff453a; } .dot { width: 10px; height: 10px; border-radius: 5px; background: #ff453a; } .stage { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; } img.view { width: 100%; } .none { font-size: 18px; color: #8e8e93; padding: 48px 16px; text-align: center; } .saved { font-size: 13px; color: #c7c7cc; text-align: center; padding: 10px 0 0; min-height: 18px; } .modes { display: flex; flex-direction: row; justify-content: center; gap: 28px; padding: 14px 0 10px; } .mode { border: 0; padding: 4px 6px; background: transparent; color: #ffffff; font-size: 15px; font-weight: 500; } .mode.on { color: #ffd60a; } .bar { display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 8px 32px 28px; } .side { width: 52px; height: 52px; border-radius: 26px; border: 0; padding: 0; display: flex; align-items: center; justify-content: center; background: #2c2c2e; color: #ffffff; } .side.ghost { background: transparent; } .shot { width: 78px; height: 78px; border-radius: 39px; border: 5px solid #ffffff; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; } .shot .core { width: 62px; height: 62px; border-radius: 31px; background: #ffffff; font-size: 1px; color: #ffffff; display: flex; align-items: center; justify-content: center; } .shot.video .core { background: #ff3b30; color: #ff3b30; } .shot.stop .core { width: 30px; height: 30px; border-radius: 8px; } .hidden { display: none; }";
 
 /// How often the view is drawn again, in ms.
 const EVERY_MS: u32 = 100;
@@ -25,12 +28,17 @@ const EVERY_MS: u32 = 100;
 type Camera = struct {
     /// The view's image, as the phone numbers it; NONE before there is one.
     handle: u32,
-    /// Whether the view is the front camera's, and whether a video is
-    /// being recorded, as the button last said.
+    /// Whether the view is the front camera's, whether the shutter records
+    /// videos (Video's mode) and whether one is being recorded.
     front: bool,
+    video: bool,
     recording: bool,
     /// The page's nodes.
-    button: u32,
+    shot: u32,
+    core: u32,
+    photo_mode: u32,
+    video_mode: u32,
+    top: u32,
     view: u32,
     empty: u32,
     saved: u32,
@@ -41,7 +49,7 @@ const NONE: u32 = 0xFFFFFFFF;
 fn init(host: &mut std.Host, a: alloc.Allocator) -> Camera {
     _ = dom.add_stylesheet(host, css: SHEET);
     let root = dom.root(host);
-    let markup = "<div class='app'><img class='view' alt='What the camera sees'><div class='none hidden'>No camera</div><div class='bar'><button class='photos' data-k='photos'>Photos</button><button class='shot' data-k='take'>Take photo</button><button class='flip hidden' data-k='flip'>⇄</button><button class='video' data-k='video'>Video</button></div><div class='saved'></div></div>";
+    let markup = "<div class='app'><div class='top'></div><div class='stage'><img class='view' alt='What the camera sees'><div class='none hidden'>No camera</div><div class='saved'></div></div><div class='modes'><button class='mode' data-k='video'>Video</button><button class='mode on' data-k='photo'>Photo</button></div><div class='bar'><button class='side' data-k='photos'><span class='icon fill'>photo_library</span></button><button class='shot' data-k='take'><div class='core'>Take photo</div></button><button class='side ghost flip' data-k='flip'><span class='icon'>cameraswitch</span></button></div></div>";
     var why = alloc.String.init(a);
     if not dom.set_markup(host, item: root, markup: markup, why: &mut why, a: a) {
         host_api.log(host, msg: why.view());
@@ -49,10 +57,26 @@ fn init(host: &mut std.Host, a: alloc.Allocator) -> Camera {
     let app = first(host, selector: ".app", a: a);
     dom.listen(host, item: app, kind: "click");
     // The front camera's button, on a phone that has one.
-    if camera.has_front(host) {
-        dom.toggle_class(host, item: first(host, selector: ".flip", a: a), name: "hidden", on: false);
+    let flip = first(host, selector: ".flip", a: a);
+    dom.toggle_class(host, item: flip, name: "hidden", on: not camera.has_front(host));
+    let modes = dom.query_all(host, scope: dom.root(host), selector: ".mode", a: a);
+    return Camera { handle: NONE, front: false, video: false, recording: false, shot: first(host, selector: ".shot", a: a), core: first(host, selector: ".core", a: a), photo_mode: modes.items()[1], video_mode: modes.items()[0], top: first(host, selector: ".top", a: a), view: first(host, selector: ".view", a: a), empty: first(host, selector: ".none", a: a), saved: first(host, selector: ".saved", a: a) };
+}
+
+/// The shutter as the mode and the recording are: Take photo, white; or
+/// Record, red; or Stop, a red square.
+fn shutter(state: &Camera, host: &mut std.Host) {
+    dom.toggle_class(host, item: state.shot, name: "video", on: state.video);
+    dom.toggle_class(host, item: state.shot, name: "stop", on: state.recording);
+    if state.recording {
+        dom.set_text(host, item: state.core, text: "Stop");
+    } else if state.video {
+        dom.set_text(host, item: state.core, text: "Record");
+    } else {
+        dom.set_text(host, item: state.core, text: "Take photo");
     }
-    return Camera { handle: NONE, front: false, recording: false, button: first(host, selector: ".video", a: a), view: first(host, selector: ".view", a: a), empty: first(host, selector: ".none", a: a), saved: first(host, selector: ".saved", a: a) };
+    dom.toggle_class(host, item: state.video_mode, name: "on", on: state.video);
+    dom.toggle_class(host, item: state.photo_mode, name: "on", on: not state.video);
 }
 
 fn update(state: &mut Camera, host: &mut std.Host, a: alloc.Allocator) {
@@ -61,15 +85,21 @@ fn update(state: &mut Camera, host: &mut std.Host, a: alloc.Allocator) {
             match key_of(host, n: e.target, a: a) {
                 some(k) => {
                     if k.view().eq("take") {
-                        camera.take(host);
-                    } else if k.view().eq("photos") {
-                        host_api.open_app(host, source: "photos.component.wasm");
-                    } else if k.view().eq("video") {
-                        if camera.recording(host) {
+                        if not state.video {
+                            camera.take(host);
+                        } else if camera.recording(host) {
                             camera.stop_video(host);
                         } else {
                             camera.start_video(host);
                         }
+                    } else if k.view().eq("photos") {
+                        host_api.open_app(host, source: "photos.component.wasm");
+                    } else if k.view().eq("video") and not state.recording {
+                        state.video = true;
+                        shutter(state, host: host);
+                    } else if k.view().eq("photo") and not state.recording {
+                        state.video = false;
+                        shutter(state, host: host);
                     } else if k.view().eq("flip") {
                         state.front = not state.front;
                         camera.use_front(host, front: state.front);
@@ -99,10 +129,18 @@ fn update(state: &mut Camera, host: &mut std.Host, a: alloc.Allocator) {
             }
             if recording != state.recording {
                 state.recording = recording;
+                shutter(state, host: host);
                 if recording {
-                    dom.set_text(host, item: state.button, text: "Stop");
+                    let rec = "<div class='dot'></div><span class='rec'>REC</span>";
+                    var why = alloc.String.init(a);
+                    if not dom.set_markup(host, item: state.top, markup: rec, why: &mut why, a: a) {
+                        host_api.log(host, msg: why.view());
+                    }
                 } else {
-                    dom.set_text(host, item: state.button, text: "Video");
+                    var why = alloc.String.init(a);
+                    if not dom.set_markup(host, item: state.top, markup: "", why: &mut why, a: a) {
+                        host_api.log(host, msg: why.view());
+                    }
                 }
             }
         }
