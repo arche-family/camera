@@ -1,14 +1,17 @@
 /// Camera, the Arche phone's, written in Arche (docs/sprints.md T7, T10 in
 /// arche-os), as a phone's camera app is: black, what the camera sees,
-/// live, filling the width, the last photo's or video's name once it is
-/// kept; under it its modes, Video and Photo, the one chosen yellow; and
-/// along the bottom the gallery's button, the round shutter and, on a
+/// live, filling the width as a 3:4 photo is taken (arche-os T12), its
+/// modes over its foot, Video and Photo, the one chosen yellow; the last
+/// photo's or video's name once it is kept; and along the bottom the
+/// gallery's button, the newest photo on it, the round shutter and, on a
 /// phone with a camera on its front, the button that turns to it and
 /// back. In Photo's mode the shutter, white, takes a photo, kept in the
 /// shared Pictures folder named by when it was taken; in Video's, red, it
 /// records a video into the shared Movies folder, REC at the top, until
 /// it is tapped again, a square then. A phone without a camera says so.
-/// An app of the page: its taps come as click events.
+/// An app of the page: its taps come as click events. It speaks the
+/// phone's language: English, Uzbek or Russian (host_api's locale), and
+/// makes its page again when that changes.
 ///
 /// An app of the phone's world (arche:phone, wit/): the camera's view is
 /// an image the phone keeps up to date (camera's view), drawn in an img;
@@ -17,10 +20,11 @@
 import alloc;
 import camera;
 import dom;
+import files;
 import host_api;
 import std;
 
-const SHEET: str = "body { padding: 0; margin: 0; background: #000000; color: #ffffff; } .icon { font-family: icons; font-size: 26px; line-height: 1; } .icon.fill { font-variation-settings: 'FILL' 1; } .app { display: flex; flex-direction: column; min-height: 100vh; background: #000000; } .top { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; height: 52px; font-size: 15px; font-weight: 500; } .rec { color: #ff453a; } .dot { width: 10px; height: 10px; border-radius: 5px; background: #ff453a; } .stage { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; } img.view { width: 100%; } .none { font-size: 18px; color: #8e8e93; padding: 48px 16px; text-align: center; } .saved { font-size: 13px; color: #c7c7cc; text-align: center; padding: 10px 0 0; min-height: 18px; } .modes { display: flex; flex-direction: row; justify-content: center; gap: 28px; padding: 14px 0 10px; } .mode { border: 0; padding: 4px 6px; background: transparent; color: #ffffff; font-size: 15px; font-weight: 500; } .mode.on { color: #ffd60a; } .bar { display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 8px 32px 28px; } .side { width: 52px; height: 52px; border-radius: 26px; border: 0; padding: 0; display: flex; align-items: center; justify-content: center; background: #2c2c2e; color: #ffffff; } .side.ghost { background: transparent; } .shot { width: 78px; height: 78px; border-radius: 39px; border: 5px solid #ffffff; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; } .shot .core { width: 62px; height: 62px; border-radius: 31px; background: #ffffff; font-size: 1px; color: #ffffff; display: flex; align-items: center; justify-content: center; } .shot.video .core { background: #ff3b30; color: #ff3b30; } .shot.stop .core { width: 30px; height: 30px; border-radius: 8px; } .hidden { display: none; }";
+const SHEET: str = "body { padding: 0; margin: 0; background: #000000; color: #ffffff; } .icon { font-family: icons; font-size: 26px; line-height: 1; } .icon.fill { font-variation-settings: 'FILL' 1; } .app { display: flex; flex-direction: column; min-height: 100vh; background: #000000; } .top { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; height: 44px; font-size: 15px; font-weight: 500; } .rec { color: #ff453a; } .dot { width: 10px; height: 10px; border-radius: 5px; background: #ff453a; } .stage { position: relative; display: flex; flex-direction: column; } img.view { width: 100%; height: 480px; object-fit: cover; } .lower { margin-top: auto; } .none { font-size: 18px; color: #8e8e93; padding: 48px 16px; text-align: center; } .saved { font-size: 13px; color: #c7c7cc; text-align: center; padding: 10px 0 0; min-height: 18px; } .modes { position: absolute; left: 0; right: 0; bottom: 6px; display: flex; flex-direction: row; justify-content: center; gap: 28px; padding: 6px 0; } .mode { border: 0; padding: 4px 6px; background: transparent; color: #ffffff; font-size: 15px; font-weight: 500; } .mode.on { color: #ffd60a; } .bar { display: flex; flex-direction: row; align-items: center; justify-content: space-between; padding: 8px 32px 28px; } .side { width: 52px; height: 52px; border-radius: 26px; border: 0; padding: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #2c2c2e; color: #ffffff; } .side.ghost { background: transparent; } .side img { width: 52px; height: 52px; border-radius: 26px; object-fit: cover; } .side .icon.gone { display: none; } .shot { width: 78px; height: 78px; border-radius: 39px; border: 5px solid #ffffff; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; } .shot .core { width: 62px; height: 62px; border-radius: 31px; background: #ffffff; font-size: 1px; color: #ffffff; display: flex; align-items: center; justify-content: center; } .shot.video .core { background: #ff3b30; color: #ff3b30; } .shot.stop .core { width: 30px; height: 30px; border-radius: 8px; } .hidden { display: none; }";
 
 /// How often the view is drawn again, in ms.
 const EVERY_MS: u32 = 100;
@@ -42,16 +46,47 @@ type Camera = struct {
     view: u32,
     empty: u32,
     saved: u32,
+    /// The gallery's button: the last photo in it, as a camera's shows,
+    /// once there is one (its name, and its picture's number).
+    last_img: u32,
+    last_icon: u32,
+    last_name: alloc.String,
+    last_handle: u32,
+    /// The phone's language (EN, UZ, RU), its locale as the phone said it,
+    /// and the stylesheet's number, to make the page again in another.
+    lang: u32,
+    locale: alloc.String,
+    style: u32,
 }
 
 const NONE: u32 = 0xFFFFFFFF;
 
+const EN: u32 = 0;
+const UZ: u32 = 1;
+const RU: u32 = 2;
+
 fn init(host: &mut std.Host, a: alloc.Allocator) -> Camera {
-    _ = dom.add_stylesheet(host, css: SHEET);
+    let style = dom.add_stylesheet(host, css: SHEET);
+    let locale = host_api.locale(host, a: a);
+    let lang = lang_of(locale.view());
     let root = dom.root(host);
-    let markup = "<div class='app'><div class='top'></div><div class='stage'><img class='view' alt='What the camera sees'><div class='none hidden'>No camera</div><div class='saved'></div></div><div class='modes'><button class='mode' data-k='video'>Video</button><button class='mode on' data-k='photo'>Photo</button></div><div class='bar'><button class='side' data-k='photos'><span class='icon fill'>photo_library</span></button><button class='shot' data-k='take'><div class='core'>Take photo</div></button><button class='side ghost flip' data-k='flip'><span class='icon'>cameraswitch</span></button></div></div>";
+    var markup = alloc.String.from("<div class='app'><div class='top'></div><div class='stage'><img class='view' alt='", a);
+    markup.push_str(say(lang, "What the camera sees"));
+    markup.push_str("'><div class='none hidden'>");
+    markup.push_str(say(lang, "No camera"));
+    markup.push_str("</div><div class='modes'><button class='mode' data-k='video'>");
+    markup.push_str(say(lang, "Video"));
+    markup.push_str("</button><button class='mode on' data-k='photo'>");
+    markup.push_str(say(lang, "Photo"));
+    markup.push_str("</button></div></div><div class='lower'><div class='saved'></div><div class='bar'><button class='side' data-k='photos' aria-label='");
+    markup.push_str(say(lang, "Photos"));
+    markup.push_str("'><img class='last hidden' alt=''><span class='icon fill lasticon'>photo_library</span></button><button class='shot' data-k='take'><div class='core'>");
+    markup.push_str(say(lang, "Take photo"));
+    markup.push_str("</div></button><button class='side ghost flip' data-k='flip' aria-label='");
+    markup.push_str(say(lang, "Switch camera"));
+    markup.push_str("'><span class='icon'>cameraswitch</span></button></div></div></div>");
     var why = alloc.String.init(a);
-    if not dom.set_markup(host, item: root, markup: markup, why: &mut why, a: a) {
+    if not dom.set_markup(host, item: root, markup: markup.view(), why: &mut why, a: a) {
         host_api.log(host, msg: why.view());
     }
     let app = first(host, selector: ".app", a: a);
@@ -60,7 +95,121 @@ fn init(host: &mut std.Host, a: alloc.Allocator) -> Camera {
     let flip = first(host, selector: ".flip", a: a);
     dom.toggle_class(host, item: flip, name: "hidden", on: not camera.has_front(host));
     let modes = dom.query_all(host, scope: dom.root(host), selector: ".mode", a: a);
-    return Camera { handle: NONE, front: false, video: false, recording: false, shot: first(host, selector: ".shot", a: a), core: first(host, selector: ".core", a: a), photo_mode: modes.items()[1], video_mode: modes.items()[0], top: first(host, selector: ".top", a: a), view: first(host, selector: ".view", a: a), empty: first(host, selector: ".none", a: a), saved: first(host, selector: ".saved", a: a) };
+    var state = Camera { handle: NONE, front: false, video: false, recording: false, shot: first(host, selector: ".shot", a: a), core: first(host, selector: ".core", a: a), photo_mode: modes.items()[1], video_mode: modes.items()[0], top: first(host, selector: ".top", a: a), view: first(host, selector: ".view", a: a), empty: first(host, selector: ".none", a: a), saved: first(host, selector: ".saved", a: a), last_img: first(host, selector: ".last", a: a), last_icon: first(host, selector: ".lasticon", a: a), last_name: alloc.String.init(a), last_handle: NONE, lang: lang, locale: locale, style: style };
+    // The newest photo there is, from before.
+    var newest = alloc.String.init(a);
+    for e in files.list(host, path: "Pictures", a: a).items() {
+        if not e.folder and e.name.view().starts_with("IMG_") and later(x: e.name.view(), y: newest.view()) {
+            newest = alloc.String.from(e.name.view(), a);
+        }
+    }
+    if newest.len() > 0 {
+        thumb(&mut state, host: host, name: newest.view(), a: a);
+    }
+    return state;
+}
+
+/// The language a locale (BCP 47, "uz-UZ") names: Uzbek, Russian, else
+/// English.
+fn lang_of(locale: str) -> u32 {
+    if locale.starts_with("uz") {
+        return UZ;
+    }
+    if locale.starts_with("ru") {
+        return RU;
+    }
+    return EN;
+}
+
+/// s, English, in lang: itself in English, and for what this does not know.
+fn say(lang: u32, s: str) -> str {
+    if s.eq("What the camera sees") {
+        if lang == UZ { return "Kamera koʻrayotgan tasvir"; }
+        if lang == RU { return "Изображение с камеры"; }
+    }
+    if s.eq("No camera") {
+        if lang == UZ { return "Kamera yoʻq"; }
+        if lang == RU { return "Нет камеры"; }
+    }
+    if s.eq("Video") {
+        if lang == UZ { return "Video"; }
+        if lang == RU { return "Видео"; }
+    }
+    if s.eq("Photo") {
+        if lang == UZ { return "Surat"; }
+        if lang == RU { return "Фото"; }
+    }
+    if s.eq("Photos") {
+        if lang == UZ { return "Galereya"; }
+        if lang == RU { return "Галерея"; }
+    }
+    if s.eq("Take photo") {
+        if lang == UZ { return "Suratga olish"; }
+        if lang == RU { return "Снять фото"; }
+    }
+    if s.eq("Record") {
+        if lang == UZ { return "Yozib olish"; }
+        if lang == RU { return "Запись"; }
+    }
+    if s.eq("Stop") {
+        if lang == UZ { return "Toʻxtatish"; }
+        if lang == RU { return "Стоп"; }
+    }
+    if s.eq("Switch camera") {
+        if lang == UZ { return "Kamerani almashtirish"; }
+        if lang == RU { return "Сменить камеру"; }
+    }
+    return s;
+}
+
+/// The page made again, in the phone's language now: the stylesheet and
+/// the nodes away, then init's, the camera and the mode kept.
+fn again(state: &mut Camera, host: &mut std.Host, a: alloc.Allocator) {
+    let front = state.front;
+    let video = state.video;
+    dom.remove_stylesheet(host, sheet: state.style);
+    for old in dom.children(host, item: dom.root(host), a: a).items() {
+        dom.release(host, item: old.*);
+    }
+    state.* = init(host, a: a);
+    state.front = front;
+    state.video = video;
+    shutter(state, host: host);
+}
+
+/// Whether name x sorts after y, as a camera's names do by when they were
+/// taken.
+fn later(x: str, y: str) -> bool {
+    let p = x.bytes();
+    let q = y.bytes();
+    var k: usize = 0;
+    while k < p.len() and k < q.len() : (k += 1) {
+        if p[k] != q[k] {
+            return p[k] > q[k];
+        }
+    }
+    return p.len() > q.len();
+}
+
+/// The photo name (in Pictures) on the gallery's button, small.
+fn thumb(state: &mut Camera, host: &mut std.Host, name: str, a: alloc.Allocator) {
+    if name.eq(state.last_name.view()) {
+        return;
+    }
+    state.last_name = alloc.String.from(name, a);
+    var path = alloc.String.from("Pictures/", a);
+    path.push_str(name);
+    match files.image(host, path: path.view(), max: 104, into: state.last_handle) {
+        some(h) => {
+            state.last_handle = h;
+            var src = alloc.String.init(a);
+            src.push_u64(h as u64);
+            dom.set_attribute(host, item: state.last_img, name: "src", value_: src.view());
+            dom.toggle_class(host, item: state.last_img, name: "hidden", on: false);
+            dom.toggle_class(host, item: state.last_icon, name: "gone", on: true);
+        }
+        none => { }
+    }
 }
 
 /// The shutter as the mode and the recording are: Take photo, white; or
@@ -69,17 +218,22 @@ fn shutter(state: &Camera, host: &mut std.Host) {
     dom.toggle_class(host, item: state.shot, name: "video", on: state.video);
     dom.toggle_class(host, item: state.shot, name: "stop", on: state.recording);
     if state.recording {
-        dom.set_text(host, item: state.core, text: "Stop");
+        dom.set_text(host, item: state.core, text: say(state.lang, "Stop"));
     } else if state.video {
-        dom.set_text(host, item: state.core, text: "Record");
+        dom.set_text(host, item: state.core, text: say(state.lang, "Record"));
     } else {
-        dom.set_text(host, item: state.core, text: "Take photo");
+        dom.set_text(host, item: state.core, text: say(state.lang, "Take photo"));
     }
     dom.toggle_class(host, item: state.video_mode, name: "on", on: state.video);
     dom.toggle_class(host, item: state.photo_mode, name: "on", on: not state.video);
 }
 
 fn update(state: &mut Camera, host: &mut std.Host, a: alloc.Allocator) {
+    // The phone's language changed: the page again, in it.
+    let locale = host_api.locale(host, a: a);
+    if not locale.view().eq(state.locale.view()) {
+        again(state, host: host, a: a);
+    }
     for e in dom.events(host, a: a).items() {
         if e.kind.view().eq("click") {
             match key_of(host, n: e.target, a: a) {
@@ -151,9 +305,22 @@ fn update(state: &mut Camera, host: &mut std.Host, a: alloc.Allocator) {
     }
     match camera.last(host, a: a) {
         some(name) => {
-            var s = alloc.String.from("Saved ", a);
-            s.push_str(name.view());
+            // "Saved IMG_…", in the phone's language.
+            var s = alloc.String.init(a);
+            if state.lang == UZ {
+                s.push_str(name.view());
+                s.push_str(" saqlandi");
+            } else if state.lang == RU {
+                s.push_str("Сохранено: ");
+                s.push_str(name.view());
+            } else {
+                s.push_str("Saved ");
+                s.push_str(name.view());
+            }
             dom.set_text(host, item: state.saved, text: s.view());
+            if name.view().starts_with("IMG_") {
+                thumb(state, host: host, name: name.view(), a: a);
+            }
         }
         none => { }
     }

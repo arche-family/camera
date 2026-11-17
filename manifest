@@ -1,6 +1,10 @@
 name: camera
 version: 1
 title: Camera
-about: Photos of what the camera sees, in Arche
+about: Take photos and videos
+title.uz: Kamera
+about.uz: Surat va video olish
+title.ru: Камера
+about.ru: Фото и видео
 publisher: arche
-needs: camera
+needs: camera files

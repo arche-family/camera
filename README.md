@@ -4,12 +4,14 @@ The Arche phone's camera app, written in [Arche](https://github.com/arche-family
 
 It works like Android's camera app:
 
-- What the camera sees, live, filling the width, on black.
+- What the camera sees, live, filling the width as a 3:4 photo is taken, its modes over its foot, on black.
 - A round shutter button under it takes a photo. The phone keeps it in the shared Pictures folder, named by when it was taken (`IMG_20261110_120000.png`), and the app says its name once it is kept.
-- Photos opens the gallery.
+- Photos opens the gallery; on it the newest photo, small and round, as a phone's camera shows it (the phone's shared files, `files`: the app reads the newest `IMG_` in Pictures, and each it takes).
 - On a phone with a camera on its front, a button beside the shutter turns to it, and back.
 - Video records what the camera sees, 30 frames a second, into the shared Movies folder (`VID_20261110_120000.avi`, Motion JPEG in AVI) until Stop.
 - A phone without a camera says so.
+
+It shows in the phone's language, English, Uzbek or Russian, as the phone's `locale` says (`en-US`, `uz-UZ`, `ru-RU`), and makes its page again when that changes.
 
 The camera's view is an image the phone keeps up to date frame by frame (the phone world's `camera.view`), drawn in an `img`; the app asks for a frame every 100 ms while it is drawn. A photo is `camera.take`, and `camera.last` names it. On a phone with a camera on its front (`camera.has-front`), a button by the shutter turns the view and photos to it and back (`camera.use-front`). A video is `camera.start-video` and `camera.stop-video`, and `camera.recording` says whether one is being recorded; while it is, the app asks for a frame every 33 ms. The phone gives these to an app whose manifest needs `camera`. It is an app of the page: its taps come as click events.
 
@@ -25,7 +27,7 @@ With [arche-lang](https://github.com/arche-family/arche-lang) checked out next t
 
 ## Test
 
-`headless` holds the taps of a headless run and the functions the phone's world adds, as a phone without a camera answers them, but with one on its front: the shutter tapped in Photo's mode, a photo taken; the front camera's button tapped; Video's mode, and the shutter tapped again, a video started; Photo's mode again, and the gallery's button, Photos asked for. `expected.txt` holds what arche-wasm's interpreter said, as Nimadir's shell does not run the phone's world; `normalize.sed` takes out where the component was built, which the shell names when the app asks to open another. `app-check.sh` runs the app with arche-wasm, by the interpreter and by the JIT, and compares what it says with `expected.txt`. CI runs it when started by hand (Actions' Run workflow). The cameras themselves, the view, a photo taken and the turn to the front camera, are tried on the phone, with the kernel's virtual camera, by arche-os's `tests/phone.sh`.
+`media/Pictures` holds a small PNG, shared as the phone shares its files (arche-wasm's `--share`): the newest photo, on the gallery's button. `headless` holds the taps of a headless run and the functions the phone's world adds, as a phone without a camera answers them, but with one on its front: the shutter tapped in Photo's mode, a photo taken; the front camera's button tapped; Video's mode, and the shutter tapped again, a video started; Photo's mode again, and the gallery's button, Photos asked for. `expected.txt` holds what arche-wasm's interpreter said, as Nimadir's shell does not run the phone's world; `normalize.sed` takes out where the component was built, which the shell names when the app asks to open another. `app-check.sh` runs the app with arche-wasm, by the interpreter and by the JIT, and compares what it says with `expected.txt`. CI runs it when started by hand (Actions' Run workflow). The cameras themselves, the view, a photo taken and the turn to the front camera, are tried on the phone, with the kernel's virtual camera, by arche-os's `tests/phone.sh`.
 
 ```sh
 ../arche-lang/wasm/app-check.sh .
